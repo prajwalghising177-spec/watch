@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gard Pro Link</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow column for a phone. Status card on top, a checklist of what the watch offers, then a copyable log. */
+:root {
+  --bg: #f1f5f6;
+  --surface: #ffffff;
+  --fg: #12202a;
+  --muted: #566772;
+  --line: #d3dde2;
+  --accent: #0b7a89;
+  --accent-fg: #ffffff;
+  --ok: #17784d;
+  --warn: #9a5b00;
+  --bad: #b3261e;
+  --log-bg: #0f1a21;
+  --log-fg: #cfe3ea;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c1317;
+    --surface: #141d23;
+    --fg: #e3ecf0;
+    --muted: #93a6b0;
+    --line: #26343d;
+    --accent: #4cc3d1;
+    --accent-fg: #04181c;
+    --ok: #4fd08f;
+    --warn: #e0a24a;
+    --bad: #ff8a80;
+    --log-bg: #080e12;
+    --log-fg: #bcd4dc;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1317;
+  --surface: #141d23;
+  --fg: #e3ecf0;
+  --muted: #93a6b0;
+  --line: #26343d;
+  --accent: #4cc3d1;
+  --accent-fg: #04181c;
+  --ok: #4fd08f;
+  --warn: #e0a24a;
+  --bad: #ff8a80;
+  --log-bg: #080e12;
+  --log-fg: #bcd4dc;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding-block: 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+header { display: flex; flex-direction: column; gap: 6px; }
+.eyebrow {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+h1 {
+  margin: 0;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+h2 {
+  margin: 0;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 18px;
+}
+.lede { margin: 0; color: var(--muted); max-width: 60ch; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.status { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.dot[data-state="ok"] { background: var(--ok); }
+.dot[data-state="busy"] { background: var(--warn); }
+.dot[data-state="bad"] { background: var(--bad); }
+#statusText { font-weight: 600; overflow-wrap: anywhere; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+button {
+  font: inherit;
+  font-weight: 600;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--fg);
+  cursor: pointer;
+}
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  flex: 1 1 180px;
+}
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button.link {
+  min-height: 40px;
+  border: none;
+  background: none;
+  color: var(--accent);
+  padding: 0;
+  text-align: left;
+  font-weight: 500;
+  text-decoration: underline;
+}
+.warn {
+  border-color: var(--warn);
+  color: var(--fg);
+}
+.warn p { margin: 0; }
+ul.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+ul.checks li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 12px;
+  align-items: start;
+  padding-block: 10px;
+  border-top: 1px solid var(--line);
+}
+ul.checks li:first-child { border-top: none; padding-top: 0; }
+.badge {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  min-width: 78px;
+  text-align: center;
+}
+li[data-state="found"] .badge { color: var(--ok); border-color: var(--ok); }
+li[data-state="missing"] .badge { color: var(--bad); border-color: var(--bad); }
+li[data-state="pending"] .badge { color: var(--warn); border-color: var(--warn); }
+.check-title { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.check-note { color: var(--muted); font-size: 14px; }
+.mono { font-family: var(--font-mono); font-size: 13px; }
+pre#log {
+  margin: 0;
+  background: var(--log-bg);
+  color: var(--log-fg);
+  border-radius: 10px;
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  min-height: 140px;
+  max-height: 50vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.hint { margin: 0; color: var(--muted); font-size: 14px; }
+@media (prefers-reduced-motion: no-preference) {
+  .dot { transition: background-color 0.2s; }
+}
+</style>
+<style>body{margin:0}</style>
+</head>
+<body>
+
+
+<main class="wrap">
+  <header>
+    <p class="eyebrow">Bluetooth test</p>
+    <h1>Gard Pro Ultra 3 link</h1>
+    <p class="lede">Connects to your watch, reads its model details and listens for anything it sends. This page never writes anything to the watch.</p>
+  </header>
+
+  <section class="card warn" id="unsupported" hidden>
+    <h2>Open this in Bluefy</h2>
+    <p>This browser can't use Bluetooth. Copy this page's link and open it in the Bluefy app.</p>
+  </section>
+
+  <section class="card" aria-live="polite">
+    <div class="status"><span class="dot" id="dot" data-state="idle"></span><span id="statusText">Not connected</span></div>
+    <div class="actions">
+      <button class="primary" id="connectBtn" type="button">Find my watch</button>
+      <button id="disconnectBtn" type="button" disabled>Disconnect</button>
+    </div>
+    <button class="link" id="anyBtn" type="button">Watch not in the list? Show all nearby devices</button>
+    <p class="hint">Before you start: disconnect the watch in GloryFit and in nRF Connect, and keep it next to your phone.</p>
+  </section>
+
+  <section class="card">
+    <h2>What the watch offers</h2>
+    <ul class="checks" id="checks"></ul>
+  </section>
+
+  <section class="card">
+    <h2>Log</h2>
+    <div class="actions">
+      <button id="copyBtn" type="button">Copy log</button>
+      <button id="clearBtn" type="button">Clear</button>
+    </div>
+    <pre id="log" tabindex="0" aria-label="Connection log"></pre>
+    <p class="hint">When it finishes, tap Copy log and paste it into your chat with Claude.</p>
+  </section>
+</main>
+
+<script>
+(function () {
+  var BASE = "-0000-1000-8000-00805f9b34fb";
+  var WANTED = [
+    { id: "180a", uuid: 0x180a, label: "Device information", note: "Model and maker name" },
+    { id: "55ff", uuid: 0x55ff, label: "Command service", note: "Where commands to the watch go" },
+    { id: "56ff", uuid: 0x56ff, label: "Data service", note: "Where larger data comes back" },
+    { id: "ffd0", uuid: 0xffd0, label: "Vendor service FFD0", note: "Extra channel seen in your scan" },
+    { id: "e49a3001-f69a-11e8-8eb2-f2801f1b9fd1", uuid: "e49a3001-f69a-11e8-8eb2-f2801f1b9fd1", label: "Vendor service E49A3001", note: "Extra channel seen in your scan" }
+  ];
+  var OPTIONAL = WANTED.map(function (w) { return w.uuid; })
+    .concat([0x5555, "generic_access", "battery_service", "heart_rate"]);
+  var READ_OK = { "2a24": 1, "2a29": 1, "2a50": 1, "35f1": 1, "34f1": 1 };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var dot = $("dot"), statusText = $("statusText"), logEl = $("log"), checksEl = $("checks");
+  var connectBtn = $("connectBtn"), disconnectBtn = $("disconnectBtn"), anyBtn = $("anyBtn");
+  var copyBtn = $("copyBtn"), clearBtn = $("clearBtn");
+  var device = null, busy = false;
+
+  function setStatus(state, text) { dot.setAttribute("data-state", state); statusText.textContent = text; }
+  function stamp() {
+    var d = new Date();
+    function p(n) { return String(n).padStart(2, "0"); }
+    return p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+  }
+  function log(msg) { logEl.textContent += stamp() + "  " + msg + "\n"; logEl.scrollTop = logEl.scrollHeight; }
+  function short(u) {
+    u = String(u).toLowerCase();
+    return (u.indexOf("0000") === 0 && u.slice(8) === BASE) ? u.slice(4, 8) : u;
+  }
+  function hex(dv) {
+    var out = [];
+    for (var i = 0; i < dv.byteLength; i++) out.push(dv.getUint8(i).toString(16).padStart(2, "0"));
+    return out.join(" ");
+  }
+  function props(p) {
+    var names = [];
+    ["read", "write", "writeWithoutResponse", "notify", "indicate"].forEach(function (k) { if (p[k]) names.push(k); });
+    return names.join(", ");
+  }
+
+  function renderChecks() {
+    checksEl.innerHTML = "";
+    WANTED.forEach(function (w) {
+      var li = document.createElement("li");
+      li.id = "chk-" + w.id;
+      li.setAttribute("data-state", "idle");
+      var badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = "not checked";
+      var box = document.createElement("div");
+      var t = document.createElement("div");
+      t.className = "check-title";
+      t.textContent = w.label;
+      var n = document.createElement("div");
+      n.className = "check-note";
+      n.textContent = w.note;
+      box.appendChild(t); box.appendChild(n);
+      li.appendChild(badge); li.appendChild(box);
+      checksEl.appendChild(li);
+    });
+  }
+  function setCheck(id, state) {
+    var li = $("chk-" + id);
+    if (!li) return;
+    li.setAttribute("data-state", state);
+    li.querySelector(".badge").textContent = state === "found" ? "found" : state === "missing" ? "not found" : state === "pending" ? "checking" : "not checked";
+  }
+
+  function onNotify(ev) {
+    var c = ev.target;
+    log("NOTIFY " + short(c.uuid) + "  " + hex(c.value));
+  }
+  function onDisconnected() {
+    log("Watch disconnected.");
+    setStatus("idle", "Not connected");
+    disconnectBtn.disabled = true;
+    connectBtn.disabled = false;
+    anyBtn.disabled = false;
+  }
+
+  async function explore(server) {
+    WANTED.forEach(function (w) { setCheck(w.id, "pending"); });
+    var services = [];
+    try { services = await server.getPrimaryServices(); }
+    catch (e) { log("Could not list services: " + (e && e.message ? e.message : e)); }
+    var found = {};
+    for (var i = 0; i < services.length; i++) {
+      var s = services[i], sid = short(s.uuid);
+      found[sid] = true;
+      log("SERVICE " + sid);
+      var chars = [];
+      try { chars = await s.getCharacteristics(); }
+      catch (e) { log("  could not list characteristics: " + (e && e.message ? e.message : e)); }
+      for (var j = 0; j < chars.length; j++) {
+        var c = chars[j], cid = short(c.uuid);
+        log("  " + cid + "  (" + props(c.properties) + ")");
+        if (c.properties.read && READ_OK[cid]) {
+          try {
+            var v = await c.readValue();
+            var txt = (cid === "2a24" || cid === "2a29") ? '"' + new TextDecoder().decode(v) + '"' : hex(v);
+            log("    read: " + txt);
+          } catch (e) { log("    read failed: " + (e && e.message ? e.message : e)); }
+        }
+        if (c.properties.notify || c.properties.indicate) {
+          try {
+            c.addEventListener("characteristicvaluechanged", onNotify);
+            await c.startNotifications();
+            log("    listening");
+          } catch (e) { log("    could not listen: " + (e && e.message ? e.message : e)); }
+        }
+      }
+    }
+    WANTED.forEach(function (w) {
+      var key = short(typeof w.uuid === "number" ? "0000" + w.uuid.toString(16).padStart(4, "0") + BASE : w.uuid);
+      setCheck(w.id, found[key] ? "found" : "missing");
+    });
+    log("Done. Now wake the watch, raise your wrist or press its buttons and see if anything shows up here.");
+  }
+
+  async function connect(all) {
+    if (busy) return;
+    busy = true;
+    connectBtn.disabled = true; anyBtn.disabled = true;
+    try {
+      setStatus("busy", "Choose your watch in the popup");
+      var opts = all
+        ? { acceptAllDevices: true, optionalServices: OPTIONAL }
+        : { filters: [{ namePrefix: "GARD" }], optionalServices: OPTIONAL };
+      device = await navigator.bluetooth.requestDevice(opts);
+      device.addEventListener("gattserverdisconnected", onDisconnected);
+      log("Selected " + (device.name || "unnamed device"));
+      setStatus("busy", "Connecting");
+      var server = await device.gatt.connect();
+      setStatus("ok", "Connected to " + (device.name || "device"));
+      disconnectBtn.disabled = false;
+      await explore(server);
+    } catch (e) {
+      var msg = e && e.message ? e.message : String(e);
+      log("Error: " + msg);
+      setStatus("bad", /cancel/i.test(msg) || (e && e.name === "NotFoundError") ? "No watch chosen. Try again." : "Could not connect. See the log.");
+      connectBtn.disabled = false; anyBtn.disabled = false;
+    } finally {
+      busy = false;
+    }
+  }
+
+  function selectLog() {
+    var r = document.createRange();
+    r.selectNodeContents(logEl);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+  }
+  async function copyLog() {
+    var text = logEl.textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      copyBtn.textContent = "Copied";
+    } catch (e) {
+      selectLog();
+      copyBtn.textContent = "Selected. Tap Copy in the menu";
+    }
+    setTimeout(function () { copyBtn.textContent = "Copy log"; }, 2500);
+  }
+
+  renderChecks();
+  if (!("bluetooth" in navigator)) {
+    $("unsupported").hidden = false;
+    connectBtn.disabled = true; anyBtn.disabled = true;
+    setStatus("bad", "Bluetooth not available here");
+  }
+  connectBtn.addEventListener("click", function () { connect(false); });
+  anyBtn.addEventListener("click", function () { connect(true); });
+  disconnectBtn.addEventListener("click", function () {
+    if (device && device.gatt && device.gatt.connected) device.gatt.disconnect();
+  });
+  copyBtn.addEventListener("click", copyLog);
+  clearBtn.addEventListener("click", function () { logEl.textContent = ""; });
+})();
+</script>
+
+</body>
+</html>
